@@ -1,11 +1,10 @@
 #include <HX711_ADC.h>
 #include <EEPROM.h>
 
-//pins:
 const int HX711_dout = 4;
 const int HX711_sck = 5;
 
-//HX711 constructor:
+// initialise load cell
 HX711_ADC LoadCell(HX711_dout, HX711_sck);
 
 const int calVal_eepromAdress = 0;

@@ -87,6 +87,7 @@ while 1:
 
         print(f"Recording for {sample_time} seconds, on file {file_name}.xlsx, on sheet {trial_name}")
 
+        # Maybe add automatic time to zero (check old RBH assignment excel for this)
         df = pd.DataFrame({"Time": [], "Weight": [], "Throttle": [], "Average": ["=AVERAGE(C$2:C$10000)"]}) # Sets the "boilerplate" for the data table
 
         while logging:
