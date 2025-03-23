@@ -2,7 +2,7 @@ import serial
 import time
 import pandas as pd
 
-port = "/dev/cu.usbmodem1101"
+port = "/dev/cu.usbmodem101"
 baud_rate = 9600
 
 # Sets up communication with Arduino
@@ -13,7 +13,7 @@ max_thr = 180
 min_thr = 0
 
 time_init = time.time()
-sample_time = 30
+sample_time = 50
 logging = True
 throttle = ""
 weight = ""
@@ -72,18 +72,23 @@ def thrToThrottle(thrInput, realThrottle): # Handles making the new throttle, pa
     else:
         futureThr = realThrottle
     
+    print(f"Throttle set to: {throttle}")
+
     return futureThr
 
 file_name = f"{input("What is the file name: ")}.xlsx"
 
 print("Calibrating load cell")
-time.sleep(5)
+time.sleep(3)
 print("Done")
 
 while 1:
     thr = input(f"Throttle ({min_thr}, {max_thr}): ")
 
-    if thr == "tare":
+    if thr == "quit":
+        break
+
+    elif thr == "tare":
         ser.write(("tare\n").encode()) # Sends command to tare the cell to the Arduino
         time.sleep(5) # Time for the load cell to tare
         print("Tared load cell")
@@ -103,6 +108,7 @@ while 1:
         df = pd.DataFrame({"Time": [""], "Weight": [""], "Throttle": [""], "Average": ["=AVERAGE(C$2:C$10000)"]}) # Sets the "boilerplate" for the data table
 
         while logging:
+            print("loggong")
             time_current = time.time()
 
             try:
@@ -115,7 +121,8 @@ while 1:
                 with pd.ExcelWriter(file_name, mode="a", if_sheet_exists="new") as writer: # Save the processed data (time, throttle, weight) to excel file and removes the index count
                     df.to_excel(writer, sheet_name=trial_name, index=False)
 
-            except:
+            except Exception as e:
+                print(e)
                 pass # In case of bad formatted data or any error
 
             if (sample_time - (time_current - time_init)) < 0: # Stops logging when hits the time limit
@@ -125,9 +132,5 @@ while 1:
         throttle = thrToThrottle(thr, throttle)
     
     ser.write((f"{throttle}T\n").encode()) # Sends to the serial aka Arduino
-    print(f"Throttle set to: {throttle}")
-
-    if throttle != 0:
-        time.sleep(0.5)
 
 ser.close()
