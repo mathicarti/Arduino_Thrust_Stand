@@ -52,16 +52,12 @@ void setup() {
 }
 
 void loop() {
-  if (Serial.available()) { // Gets any inputs from Serial, and checks if its a throttle
-    String serialData = Serial.readStringUntil('\n');
-    throttle = changeThrottle(serialData);
-  }
-
   static boolean newDataReady = 0;
   
-  if (Serial.available() > 0) { // if 't' sent, load cell tared (set to 0g)
-    char inByte = Serial.read();
-    if (inByte == 't') LoadCell.tareNoDelay();
+  if (Serial.available() > 0) { // Gets any inputs from Serial, and checks if its a throttle. If 't' sent, load cell tared (set to 0g)
+    String serialData = Serial.readStringUntil('\n');
+    throttle = changeThrottle(serialData);
+    tare_cell(serialData);
   }
 
   ESC.write(throttle); // Sends the throttle to the ESC
@@ -87,6 +83,11 @@ int changeThrottle(String serThr) { // Sets the new throttle (between 0-180) sen
   }
 
   return thr;
+}
+void tare_cell(String serTare) { 
+  if (serTare == "tare") { 
+    LoadCell.tareNoDelay();
+  } 
 }
 
 void readVal(int throttleVal, int loadCellF) { // Parses output and sends it through Serial
