@@ -13,7 +13,7 @@ max_thr = 180
 min_thr = 0
 
 time_init = time.time()
-sample_time = 50
+sample_time = 20
 logging = True
 throttle = ""
 weight = ""
@@ -90,7 +90,7 @@ while 1:
 
     elif thr == "tare":
         ser.write(("tare\n").encode()) # Sends command to tare the cell to the Arduino
-        time.sleep(5) # Time for the load cell to tare
+        time.sleep(3) # Time for the load cell to tare
         print("Tared load cell")
     
     elif thr.lower() == "log":
@@ -102,24 +102,29 @@ while 1:
 
         logging = True
 
-        print(f"Recording for {sample_time} seconds, on file {file_name}, on sheet {trial_name}")
+        print(f"Recording for {sample_time} milliseconds, on file {file_name}, on sheet {trial_name}")
 
-        # Maybe add automatic time to zero (check old RBH assignment excel for this)
-        df = pd.DataFrame({"Time": [""], "Weight": [""], "Throttle": [""], "Average": ["=AVERAGE(C$2:C$10000)"]}) # Sets the "boilerplate" for the data table
+        index_count = 0
 
         while logging:
-            print("loggong")
             time_current = time.time()
+
+            df = pd.DataFrame({"Time": [], "Weight": [], "Throttle": [], "Average": []}) # Boilerplate for sheet
 
             try:
                 arduino_line = ser.readline().decode().strip() # Gets data from Arduino, and decode it to str
                 throttle, weight = arduino_line.split(",") # Parses data from Arduino into throttle and weight
 
-                new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [int(weight)], "Throttle": [int(throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
+                index_count += 1
+                if index_count == 1:
+                    new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [int(weight)], "Throttle": [int(throttle)], "Average": ["=AVERAGE(C$2:C$10000)"]}) # New first row, with average calculation
+                else:
+                    new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [int(weight)], "Throttle": [int(throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
                 df = pd.concat([df, new_row], ignore_index=True) # Inserts the new row at the end of the main data table
 
                 with pd.ExcelWriter(file_name, mode="a", if_sheet_exists="replace") as writer: # Save the processed data (time, throttle, weight) to excel file and removes the index count
                     df.to_excel(writer, sheet_name=trial_name, index=False)
+                print("logged")
 
             except Exception as e:
                 print(e)
