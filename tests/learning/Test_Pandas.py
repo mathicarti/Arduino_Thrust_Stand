@@ -1,26 +1,9 @@
 import pandas as pd
 
-data = {
-    "Time": [1, 2, 3, 4],
-    "Thrust": [10, 11, 13, 10],
-    "Throttle": [25, 25, 25, 25],
-    "Average": ["=AVERAGE(C$2:C$10000)", 0, 0, 0]
-}
+df = pd.DataFrame({"Time": [""], "Weight": [""], "Throttle": [""], "Average": ["=AVERAGE(C$3:C$10000)"]})
 
-df = pd.DataFrame(data)
-
-# new_row = pd.DataFrame({"Time": [5], "Thrust": [12], "Throttle": [25]})
-
-# df = pd.concat([df, new_row], ignore_index=True)
-
-# df.to_csv('test_data.csv', index=False)
-
-# df_read = pd.read_csv('test_data.csv')
-
-# print(df_read)
-
-sample_time = 30
-file_name = "test_data"
+sample_time = 5
+file_name = "./tests/learning/test_logging.xlsx"
 
 radius = input("What is the radius of the propeller: ")
 angle = input("What is the blade angle: ")
@@ -29,7 +12,15 @@ trial_name = f"{radius}mm_{angle}deg_{trial}"
 
 print(f"Recording for {sample_time} seconds, on file {file_name}.xlsx, on sheet {trial_name}")
 
-with pd.ExcelWriter(f"{file_name}.xlsx", mode='a', if_sheet_exists="new") as writer:
-    df.to_excel(writer, sheet_name=trial_name, index=False)
+for i in range(10):
+    time = 0+i
+    weight = 300+i^2
+    throttle = 10
+
+    new_row = pd.DataFrame({"Time": [int(time)], "Weight": [int(weight)], "Throttle": [int(throttle)], "Average": [""]})
+    df = pd.concat([df, new_row], ignore_index=True)
+
+    with pd.ExcelWriter(file_name, mode='a', if_sheet_exists="replace") as writer:
+        df.to_excel(writer, sheet_name=trial_name, index=False)
 
 print(df)

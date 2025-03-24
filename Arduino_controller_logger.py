@@ -118,7 +118,7 @@ while 1:
                 new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [int(weight)], "Throttle": [int(throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
                 df = pd.concat([df, new_row], ignore_index=True) # Inserts the new row at the end of the main data table
 
-                with pd.ExcelWriter(file_name, mode="a", if_sheet_exists="new") as writer: # Save the processed data (time, throttle, weight) to excel file and removes the index count
+                with pd.ExcelWriter(file_name, mode="a", if_sheet_exists="replace") as writer: # Save the processed data (time, throttle, weight) to excel file and removes the index count
                     df.to_excel(writer, sheet_name=trial_name, index=False)
 
             except Exception as e:
