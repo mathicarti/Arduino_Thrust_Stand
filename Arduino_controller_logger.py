@@ -26,7 +26,7 @@ print("Done")
 while 1:
     thr = input(f"Throttle ({min_thr}, {max_thr}): ")
 
-    if thr == "quit":
+    if thr == "quit" or thr == "q":
         break
 
     elif thr == "tare":

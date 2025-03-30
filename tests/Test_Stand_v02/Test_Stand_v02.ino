@@ -30,8 +30,8 @@ void loop() {
 int changeThrottle(String serThr) {
   int thr = 0;
 
-  if (serThr.endsWith("T")) {
-    serThr.remove(serThr.indexOf("T"), 1);
+  if (serThr.endsWith("t")) {
+    serThr.remove(serThr.indexOf("t"), 1);
     thr = serThr.toInt();
   } else {
     thr = throttle;

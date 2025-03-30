@@ -56,7 +56,7 @@ def thrToThrottle(thrInput, realThrottle): # Handles making the new throttle, pa
     else:
         futureThr = realThrottle
     
-    print(f"Throttle set to: {throttle}")
+    print(f"Throttle set to: {futureThr}")
 
     return futureThr
 
@@ -79,7 +79,7 @@ def log_data_to_excel(logging_time, logging_file_name, arduino_output_line):
 
     while logging:
         time_current = time.time()
-
+        
         try:
             weight, throttle = arduino_output_line.split(",") # Parses data from Arduino into throttle and weight
             index_count += 1
@@ -105,3 +105,4 @@ def log_data_to_excel(logging_time, logging_file_name, arduino_output_line):
 
         if (logging_time - (time_current - time_init)) < 0: # Stops logging when hits the time limit
             logging = False 
+
