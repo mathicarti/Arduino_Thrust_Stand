@@ -6,9 +6,12 @@ throttle = 0
 max_thr = 180
 min_thr = 0
 
+sample_time = 5
+file_name = ""
+
 class SerialHandler:
-    def __init__(self, port = "/dev/cu.usbmodem101", baud_rate = 9600, timeout=1):
-        self.ser = serial.Serial(port, baud_rate, timeout)
+    def __init__(self, ard_port="/dev/cu.usbmodem101", baud_rate=9600, time_out=1):
+        self.ser = serial.Serial(port=ard_port, baudrate=baud_rate, timeout=time_out)
         print("Calibrating load cell")
         time.sleep(1)
         print("Done")
@@ -21,8 +24,6 @@ class SerialHandler:
     
     def close(self):
         self.ser.close()
-
-sh = SerialHandler()
 
 def parseThr(thrInputCommand): # Parses throttle input into command (+, -, exact) and value (add, sub, exact)
     command = ""
@@ -155,3 +156,5 @@ def quick_log(logging_time=2):
 
         if (logging_time - (time_current - time_init)) < 0: # Stops logging when hits the time limit
             logging = False 
+
+sh = SerialHandler()
