@@ -7,13 +7,15 @@ max_thr = 180
 min_thr = 0
 
 sample_time = 5
-file_name = ""
+log_time = 1
+file_name = "test.xlsx"
+calibration_time = 10
 
 class SerialHandler:
     def __init__(self, ard_port="/dev/cu.usbmodem101", baud_rate=9600, time_out=1):
         self.ser = serial.Serial(port=ard_port, baudrate=baud_rate, timeout=time_out)
-        print("Calibrating load cell")
-        time.sleep(1)
+        print("Calibrating load cell and ESC")
+        time.sleep(calibration_time)
         print("Done")
 
     def send(self, message):
@@ -75,8 +77,6 @@ def thrToThrottle(thrInput, realThrottle): # Handles making the new throttle, pa
 
     else:
         futureThr = realThrottle
-    
-    print(f"Throttle set to: {futureThr}")
 
     thrMessage = f"{futureThr}T"
     sh.send(thrMessage)
@@ -86,7 +86,12 @@ def tare():
     time.sleep(1) # Time for the load cell to tare
     print("Tared load cell")
 
-def log_data_to_excel(logging_time, logging_file_name):
+def log_data_to_excel(logging_time, logging_file_name=file_name):
+    try:
+        logging_file_name = f"{input(f"File name ({file_name} no .xlsx): ")}.xlsx"
+    except:
+        pass
+    
     radius = input("What is the radius of the propeller: ")
     angle = input("What is the blade angle: ")
     rpm = input("what is the RPM: ")
@@ -130,7 +135,7 @@ def log_data_to_excel(logging_time, logging_file_name):
         if (logging_time - (time_current - time_init)) < 0: # Stops logging when hits the time limit
             logging = False 
 
-def quick_log(logging_time=2):
+def quick_log(logging_time=log_time):
     print(f"Sampling data for {logging_time} seconds")
 
     time_init = time.time()
@@ -143,7 +148,7 @@ def quick_log(logging_time=2):
 
         try:
             arduino_line = sh.receive() # Gets data from Arduino, and decode it to str
-            print(arduino_line)
+
             weight, throttle = arduino_line.split(",") # Parses data from Arduino into throttle and weight
 
             new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [int(weight)], "Throttle": [int(throttle)]}) # Gets all the data and formats it into a new data row
@@ -158,3 +163,28 @@ def quick_log(logging_time=2):
             logging = False 
 
 sh = SerialHandler()
+
+while 1:
+    thr = input(f"Throttle ({min_thr}, {max_thr}) ({throttle}): ")
+
+    if thr == "quit" or thr == "q":
+        throttle = thrToThrottle("0", throttle)
+        break
+
+    elif thr == "tare":
+        tare()
+
+    elif thr.lower() == "ql":
+        try:
+            log_time = input("How long to sample: ")
+            quick_log(log_time)
+        except:
+            quick_log()
+    
+    elif thr.lower() == "log":
+        log_data_to_excel(sample_time, file_name)          
+
+    else:
+        thrToThrottle(thr, throttle)
+
+sh.close()
