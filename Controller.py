@@ -212,9 +212,9 @@ def autolog(logging_file_name=file_name):
         time.sleep(0.1)
         tare()
         sh.send(f"{rpm}T")
-        time.sleep(0.4)
+        time.sleep(1)
 
-        quick_log(1, False)
+        quick_log(1.5, False)
 
         df = pd.DataFrame({"Time": [], "Weight": [], "Throttle": [], "Average": []}) # Boilerplate for sheet
         index_count = 0
