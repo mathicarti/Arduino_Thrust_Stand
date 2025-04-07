@@ -249,12 +249,12 @@ def autolog(logging_file_name=file_name):
         try:
             with pd.ExcelWriter(logging_file_name, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
                 df.to_excel(writer, sheet_name=trial_name, startcol=col_offset, index=False)
-                col_offset += len(df) + 2 # Update row_offset for the next DataFrame.
+                col_offset += len(df.columns) + 1 # Update row_offset for the next DataFrame.
 
         except FileNotFoundError:
             with pd.ExcelWriter(logging_file_name, engine='openpyxl') as writer:
                 df.to_excel(writer, sheet_name=trial_name, startcol=col_offset, index=False)
-                col_offset += len(df) + 2
+                col_offset += len(df.columns) + 1
 
         print("\n----------------------------------------------------------")
         print(f"Saved data to {logging_file_name}, sheet name: {trial_name}")
