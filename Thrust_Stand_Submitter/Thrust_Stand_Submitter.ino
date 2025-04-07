@@ -23,7 +23,7 @@ void setup() {
   ESC.attach(escPin,1000,2000);
   delay(1);
   ESC.write(10);
-  delay(10000);
+  delay(5000);
 
   // Calibration of the load cell
   LoadCell.begin();

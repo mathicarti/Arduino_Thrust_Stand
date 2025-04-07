@@ -88,9 +88,9 @@ def tare():
     print("Tared load cell")
 
 def log_data_to_excel(logging_time, logging_file_name=file_name):
-    try:
-        logging_file_name = f"{input(f"File name ({file_name} no .xlsx): ")}.xlsx"
-    except:
+    logging_file_name = f"{input(f"File name ({file_name} no .xlsx): ")}.xlsx"
+    
+    if logging_file_name == '':
         logging_file_name = file_name
     
     radius = input("What is the radius of the propeller: ")
@@ -99,7 +99,7 @@ def log_data_to_excel(logging_time, logging_file_name=file_name):
     trial = input("What is the trial number (1-5): ")
     trial_name = f"{radius}mm_{angle}deg_{rpm}RPM_{trial}"
 
-    print(f"Recording for {logging_time} milliseconds, on file {logging_file_name}, on sheet {trial_name}")
+    print(f"Recording for {logging_time} seconds, on file {logging_file_name}, on sheet {trial_name}")
 
     index_count = 0
     time_init = time.time()
@@ -136,8 +136,9 @@ def log_data_to_excel(logging_time, logging_file_name=file_name):
         if (logging_time - (time_current - time_init)) < 0: # Stops logging when hits the time limit
             logging = False 
 
-def quick_log(logging_time=log_time):
-    print(f"Sampling data for {logging_time} seconds")
+def quick_log(logging_time=log_time, print_out=True):
+    if print_out:
+        print(f"Sampling data for {logging_time} seconds")
 
     time_init = time.time()
     logging = True
@@ -154,7 +155,8 @@ def quick_log(logging_time=log_time):
 
             new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)]}) # Gets all the data and formats it into a new data row
             df = pd.concat([df, new_row], ignore_index=True)
-            print(df)
+            if print_out:
+                print(df)
 
         except Exception as e:
             print(e)
@@ -164,12 +166,12 @@ def quick_log(logging_time=log_time):
             logging = False 
 
 def autolog(logging_file_name=file_name):
-    try:
-        logging_file_name = f"{input(f"File name ({file_name} no .xlsx): ")}.xlsx"
-    except:
+    logging_file_name = f"{input(f"File name ({file_name} no .xlsx): ")}.xlsx"
+    
+    if logging_file_name == '':
         logging_file_name = file_name
 
-    logging_time = 3
+    logging_time = 5
     radius = input("What is the radius of the propeller: ")
     angle = input("What is the blade angle: ")
     try:
@@ -185,31 +187,34 @@ def autolog(logging_file_name=file_name):
     for i in range(speed_count):
         speeds.append(step+(i*step))
 
-    print(file_name, speeds)
-
     for i in range(speed_count):
-        time_init = time.time()
-        logging = True
+        sh.send("0T")
+        time.sleep(0.1)
+
+        # "flush" the Serial monitor
+        print()
+        print("Flushing...")
+        quick_log(4, False)
 
         rpm = speeds[i]
         trial_name = f"{radius}mm_{angle}deg_{rpm}RPM"
+        print()
+        print(f"Recording for {logging_time} seconds, on file {logging_file_name}, on sheet {trial_name}")
 
         # Tare the scale after every specific RPM
+        print()
         sh.send("0T")
-        time.sleep(1)
+        time.sleep(0.1)
         tare()
         sh.send(f"{rpm}T")
-        time.sleep(1)
+        time.sleep(0.8)
 
-        # "flush" the Serial monitor
-        while 1:
-            flush = input("Flush (y/n): ")
-            if flush == "y":
-                quick_log("1")
-            else:
-                break
+        quick_log(2, False)
 
         df = pd.DataFrame({"Time": [], "Weight": [], "Throttle": [], "Average": []}) # Boilerplate for sheet
+        index_count = 0
+        logging = True
+        time_init = time.time()
 
         while logging:
             time_current = time.time()
@@ -218,10 +223,10 @@ def autolog(logging_file_name=file_name):
                 arduino_line = sh.receive() # Gets data from Arduino, and decode it to str
                 ard_weight, ard_throttle = arduino_line.split(",") # Parses data from Arduino into throttle and weight
                 
-                index_count += 1
                 
-                if index_count == 1:
+                if index_count == 0:
                     new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": ["=AVERAGE(B$2:B$10000)"]}) # New first row, with average calculation
+                    index_count = 1
                 
                 else:
                     new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
@@ -239,6 +244,10 @@ def autolog(logging_file_name=file_name):
 
             if (logging_time - (time_current - time_init)) < 0: # Stops logging when hits the time limit
                 logging = False 
+
+    # Resets ESC to 0
+    sh.send("0T")
+    time.sleep(0.1)
         
 
 sh = SerialHandler()
@@ -255,7 +264,7 @@ while 1:
 
     elif thr.lower() == "ql":
         try:
-            log_time = input("How long to sample: ")
+            log_time = int(input("How long to sample: "))
             quick_log(log_time)
         except:
             quick_log()
