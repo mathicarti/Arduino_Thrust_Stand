@@ -1,7 +1,7 @@
 import serial
 import time
 import pandas as pd
-import openpyxl
+from openpyxl.utils import get_column_letter
 
 throttle = 0
 max_thr = 180
@@ -118,7 +118,7 @@ def log_data_to_excel(logging_time, logging_file_name=file_name):
             index_count += 1
             
             if index_count == 1:
-                new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": ["=AVERAGE(B$2:B$10000)"]}) # New first row, with average calculation
+                new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": [f"=AVERAGE(B$2:B$10000)"]}) # New first row, with average calculation
             
             else:
                 new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
@@ -169,7 +169,7 @@ def quick_log(logging_time=log_time, print_out=True):
 def autolog(logging_file_name=file_name):
     logging_file_name = f"{input(f"File name ({file_name} no .xlsx): ")}.xlsx"
     
-    if logging_file_name == '':
+    if logging_file_name == '\n':
         logging_file_name = file_name
 
     logging_time = 5
@@ -224,23 +224,23 @@ def autolog(logging_file_name=file_name):
         while logging:
             time_current = time.time()
             
-            try:
-                arduino_line = sh.receive() # Gets data from Arduino, and decode it to str
-                ard_weight, ard_throttle = arduino_line.split(",") # Parses data from Arduino into throttle and weight
-                
-                if index_count == 0:
-                    new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": ["=AVERAGE(B$2:B$10000)"]}) # New first row, with average calculation
-                    index_count = 1
-                
-                else:
-                    new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
-                
-                df = pd.concat([df, new_row], ignore_index=True) # Inserts the new row at the end of the main data table
-                print(df)
+            # try:
+            arduino_line = sh.receive() # Gets data from Arduino, and decode it to str
+            ard_weight, ard_throttle = arduino_line.split(",") # Parses data from Arduino into throttle and weight
+            
+            if index_count == 0:
+                new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": [f"=AVERAGE({(get_column_letter(len(df.columns) + col_offset - 2))}$2:{get_column_letter(len(df.columns) + col_offset - 2)}$10000)"]}) # New first row, with average calculation
+                index_count = 1
+            
+            else:
+                new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
+            
+            df = pd.concat([df, new_row], ignore_index=True) # Inserts the new row at the end of the main data table
+            print(df)
 
-            except Exception as e:
-                print(e)
-                pass # In case of bad formatted data or any error
+            # except Exception as e:
+            #     print(e)
+            #     pass # In case of bad formatted data or any error
 
             if (logging_time - (time_current - time_init)) < 0: # Stops logging when hits the time limit
                 logging = False 
@@ -273,7 +273,7 @@ while 1:
         throttle = thrToThrottle("0", throttle)
         break
 
-    elif thr == "tare":
+    elif thr == "tare" or thr == "t":
         tare()
 
     elif thr.lower() == "ql":
