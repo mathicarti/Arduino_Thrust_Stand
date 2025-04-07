@@ -80,6 +80,7 @@ def thrToThrottle(thrInput, realThrottle): # Handles making the new throttle, pa
 
     thrMessage = f"{futureThr}T"
     sh.send(thrMessage)
+    return futureThr
 
 def tare():
     sh.send("tare") # Sends command to tare the cell to the Arduino
@@ -111,15 +112,15 @@ def log_data_to_excel(logging_time, logging_file_name=file_name):
         
         try:
             arduino_line = sh.receive() # Gets data from Arduino, and decode it to str
-            weight, throttle = arduino_line.split(",") # Parses data from Arduino into throttle and weight
+            ard_weight, ard_throttle = arduino_line.split(",") # Parses data from Arduino into throttle and weight
             
             index_count += 1
             
             if index_count == 1:
-                new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [int(weight)], "Throttle": [int(throttle)], "Average": ["=AVERAGE(B$2:B$10000)"]}) # New first row, with average calculation
+                new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": ["=AVERAGE(B$2:B$10000)"]}) # New first row, with average calculation
             
             else:
-                new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [int(weight)], "Throttle": [int(throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
+                new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
             
             df = pd.concat([df, new_row], ignore_index=True) # Inserts the new row at the end of the main data table
 
@@ -149,9 +150,9 @@ def quick_log(logging_time=log_time):
         try:
             arduino_line = sh.receive() # Gets data from Arduino, and decode it to str
 
-            weight, throttle = arduino_line.split(",") # Parses data from Arduino into throttle and weight
+            ard_weight, ard_throttle = arduino_line.split(",") # Parses data from Arduino into throttle and weight
 
-            new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [int(weight)], "Throttle": [int(throttle)]}) # Gets all the data and formats it into a new data row
+            new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)]}) # Gets all the data and formats it into a new data row
             df = pd.concat([df, new_row], ignore_index=True)
             print(df)
 
@@ -185,6 +186,6 @@ while 1:
         log_data_to_excel(sample_time, file_name)          
 
     else:
-        thrToThrottle(thr, throttle)
+        throttle = thrToThrottle(thr, throttle)
 
 sh.close()

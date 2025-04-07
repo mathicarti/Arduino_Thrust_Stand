@@ -23,7 +23,7 @@ void setup() {
   ESC.attach(escPin,1000,2000);
   delay(1);
   ESC.write(10);
-  delay(5000);
+  delay(10000);
 
   // Calibration of the load cell
   LoadCell.begin();
@@ -90,8 +90,8 @@ void tare_cell(String serTare) {
   } 
 }
 
-void readVal(int throttleVal, int loadCellF) { // Parses output and sends it through Serial
-  Serial.print(loadCellF);
+void readVal(int throttleVal, float loadCellF) { // Parses output and sends it through Serial
+  Serial.print(loadCellF, 5);
   Serial.print(",");
   Serial.println(throttleVal);
 
