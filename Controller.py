@@ -175,6 +175,7 @@ def autolog(logging_file_name=file_name):
     logging_time = 5
     radius = input("What is the radius of the propeller: ")
     angle = input("What is the blade angle: ")
+    trial = input("What is the trial number (1-5): ")
     try:
         speed_count = int(input("How many speeds to log (#0-#18): ")) # Get the number of speeds (e.g. 3 -> 10, 20, 30)
     except:
@@ -182,7 +183,7 @@ def autolog(logging_file_name=file_name):
     step = 10
     speeds = []
 
-    trial_name = f"{radius}mm_{angle}deg"
+    trial_name = f"{radius}mm_{angle}deg_trial{trial}"
     print(f"Recording for {logging_time} seconds, on file {logging_file_name}, on sheet {trial_name}")
 
     if speed_count < min_thr or speed_count > min_thr:
