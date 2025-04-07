@@ -1,6 +1,7 @@
 import serial
 import time
 import pandas as pd
+import openpyxl
 
 throttle = 0
 max_thr = 180
@@ -9,7 +10,7 @@ min_thr = 0
 sample_time = 5
 log_time = 1
 file_name = "test.xlsx"
-calibration_time = 10
+calibration_time = 3 # used to be 10
 
 class SerialHandler:
     def __init__(self, ard_port="/dev/cu.usbmodem101", baud_rate=9600, time_out=1):
@@ -181,35 +182,38 @@ def autolog(logging_file_name=file_name):
     step = 10
     speeds = []
 
+    trial_name = f"{radius}mm_{angle}deg"
+    print(f"Recording for {logging_time} seconds, on file {logging_file_name}, on sheet {trial_name}")
+
     if speed_count < min_thr or speed_count > min_thr:
         speed_count = 18 # If value is to great or small, then set default to 18
 
     for i in range(speed_count):
         speeds.append(step+(i*step))
 
-    for i in range(speed_count):
+    row_offset = 0
+    
+    for rpm in speeds:
+        print("\n----------------------------------------------------------")
+        print(f"Preparing to log for RPM: {rpm}, for {logging_time} seconds")
+
         sh.send("0T")
         time.sleep(0.1)
 
         # "flush" the Serial monitor
-        print()
+        print("\n----------------------------------------------------------")
         print("Flushing...")
         quick_log(4, False)
 
-        rpm = speeds[i]
-        trial_name = f"{radius}mm_{angle}deg_{rpm}RPM"
-        print()
-        print(f"Recording for {logging_time} seconds, on file {logging_file_name}, on sheet {trial_name}")
-
         # Tare the scale after every specific RPM
-        print()
+        print("\n----------------------------------------------------------")
         sh.send("0T")
         time.sleep(0.1)
         tare()
         sh.send(f"{rpm}T")
-        time.sleep(0.8)
+        time.sleep(0.4)
 
-        quick_log(2, False)
+        quick_log(1, False)
 
         df = pd.DataFrame({"Time": [], "Weight": [], "Throttle": [], "Average": []}) # Boilerplate for sheet
         index_count = 0
@@ -223,7 +227,6 @@ def autolog(logging_file_name=file_name):
                 arduino_line = sh.receive() # Gets data from Arduino, and decode it to str
                 ard_weight, ard_throttle = arduino_line.split(",") # Parses data from Arduino into throttle and weight
                 
-                
                 if index_count == 0:
                     new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": ["=AVERAGE(B$2:B$10000)"]}) # New first row, with average calculation
                     index_count = 1
@@ -232,10 +235,6 @@ def autolog(logging_file_name=file_name):
                     new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
                 
                 df = pd.concat([df, new_row], ignore_index=True) # Inserts the new row at the end of the main data table
-
-                with pd.ExcelWriter(logging_file_name, mode="a", if_sheet_exists="replace") as writer: # Save the processed data (time, throttle, weight) to excel file and removes the index count
-                    df.to_excel(writer, sheet_name=trial_name, index=False)
-
                 print(df)
 
             except Exception as e:
@@ -244,6 +243,20 @@ def autolog(logging_file_name=file_name):
 
             if (logging_time - (time_current - time_init)) < 0: # Stops logging when hits the time limit
                 logging = False 
+
+        # Append DataFrame to Excel, two columns to the right
+        try:
+            with pd.ExcelWriter(logging_file_name, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                df.to_excel(writer, sheet_name=trial_name, startrow=row_offset, index=False)
+                row_offset = row_offset + len(df) + 2 # Update row_offset for the next DataFrame.
+
+        except FileNotFoundError:
+            with pd.ExcelWriter(logging_file_name, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name=trial_name, startrow=row_offset, index=False)
+                row_offset = row_offset + len(df) + 2
+
+        print("\n----------------------------------------------------------")
+        print(f"Saved data to {logging_file_name}, sheet name: {trial_name}")
 
     # Resets ESC to 0
     sh.send("0T")
