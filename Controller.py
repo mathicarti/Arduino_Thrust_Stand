@@ -191,8 +191,8 @@ def autolog(logging_file_name=file_name):
     for i in range(speed_count):
         speeds.append(step+(i*step))
 
-    row_offset = 0
-    
+    col_offset = 0
+
     for rpm in speeds:
         print("\n----------------------------------------------------------")
         print(f"Preparing to log for RPM: {rpm}, for {logging_time} seconds")
@@ -247,13 +247,13 @@ def autolog(logging_file_name=file_name):
         # Append DataFrame to Excel, two columns to the right
         try:
             with pd.ExcelWriter(logging_file_name, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
-                df.to_excel(writer, sheet_name=trial_name, startrow=row_offset, index=False)
-                row_offset = row_offset + len(df) + 2 # Update row_offset for the next DataFrame.
+                df.to_excel(writer, sheet_name=trial_name, startcol=col_offset, index=False)
+                col_offset += len(df) + 2 # Update row_offset for the next DataFrame.
 
         except FileNotFoundError:
             with pd.ExcelWriter(logging_file_name, engine='openpyxl') as writer:
-                df.to_excel(writer, sheet_name=trial_name, startrow=row_offset, index=False)
-                row_offset = row_offset + len(df) + 2
+                df.to_excel(writer, sheet_name=trial_name, startcol=col_offset, index=False)
+                col_offset += len(df) + 2
 
         print("\n----------------------------------------------------------")
         print(f"Saved data to {logging_file_name}, sheet name: {trial_name}")
