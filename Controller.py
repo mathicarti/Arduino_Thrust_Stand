@@ -91,7 +91,7 @@ def log_data_to_excel(logging_time, logging_file_name=file_name):
     try:
         logging_file_name = f"{input(f"File name ({file_name} no .xlsx): ")}.xlsx"
     except:
-        pass
+        logging_file_name = file_name
     
     radius = input("What is the radius of the propeller: ")
     angle = input("What is the blade angle: ")
@@ -163,6 +163,84 @@ def quick_log(logging_time=log_time):
         if (logging_time - (time_current - time_init)) < 0: # Stops logging when hits the time limit
             logging = False 
 
+def autolog(logging_file_name=file_name):
+    try:
+        logging_file_name = f"{input(f"File name ({file_name} no .xlsx): ")}.xlsx"
+    except:
+        logging_file_name = file_name
+
+    logging_time = 3
+    radius = input("What is the radius of the propeller: ")
+    angle = input("What is the blade angle: ")
+    try:
+        speed_count = int(input("How many speeds to log (#0-#18): ")) # Get the number of speeds (e.g. 3 -> 10, 20, 30)
+    except:
+        speed_count = 18
+    step = 10
+    speeds = []
+
+    if speed_count < min_thr or speed_count > min_thr:
+        speed_count = 18 # If value is to great or small, then set default to 18
+
+    for i in range(speed_count):
+        speeds.append(step+(i*step))
+
+    print(file_name, speeds)
+
+    for i in range(speed_count):
+        time_init = time.time()
+        logging = True
+
+        rpm = speeds[i]
+        trial_name = f"{radius}mm_{angle}deg_{rpm}RPM"
+
+        # Tare the scale after every specific RPM
+        sh.send("0T")
+        time.sleep(1)
+        tare()
+        sh.send(f"{rpm}T")
+        time.sleep(1)
+
+        # "flush" the Serial monitor
+        while 1:
+            flush = input("Flush (y/n): ")
+            if flush == "y":
+                quick_log("1")
+            else:
+                break
+
+        df = pd.DataFrame({"Time": [], "Weight": [], "Throttle": [], "Average": []}) # Boilerplate for sheet
+
+        while logging:
+            time_current = time.time()
+            
+            try:
+                arduino_line = sh.receive() # Gets data from Arduino, and decode it to str
+                ard_weight, ard_throttle = arduino_line.split(",") # Parses data from Arduino into throttle and weight
+                
+                index_count += 1
+                
+                if index_count == 1:
+                    new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": ["=AVERAGE(B$2:B$10000)"]}) # New first row, with average calculation
+                
+                else:
+                    new_row = pd.DataFrame({"Time": [time_current - time_init], "Weight": [float(ard_weight)], "Throttle": [int(ard_throttle)], "Average": [""]}) # Gets all the data and formats it into a new data row
+                
+                df = pd.concat([df, new_row], ignore_index=True) # Inserts the new row at the end of the main data table
+
+                with pd.ExcelWriter(logging_file_name, mode="a", if_sheet_exists="replace") as writer: # Save the processed data (time, throttle, weight) to excel file and removes the index count
+                    df.to_excel(writer, sheet_name=trial_name, index=False)
+
+                print(df)
+
+            except Exception as e:
+                print(e)
+                pass # In case of bad formatted data or any error
+
+            if (logging_time - (time_current - time_init)) < 0: # Stops logging when hits the time limit
+                logging = False 
+        
+
 sh = SerialHandler()
 
 while 1:
@@ -181,8 +259,11 @@ while 1:
             quick_log(log_time)
         except:
             quick_log()
+
+    elif thr.lower() == "al":
+        autolog(file_name)
     
-    elif thr.lower() == "log":
+    elif thr.lower() == "log" or thr.lower() == "l":
         log_data_to_excel(sample_time, file_name)          
 
     else:
