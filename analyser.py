@@ -62,7 +62,7 @@ def analyze_excel_blocks_to_excel_aligned(input_file_path, sheet_name, output_fi
 # Example usage:
 
 input_excel_file = 'test.xlsx'
-input_sheet = '120mm_8deg_trial2'
+input_sheet = input('sheet name: ')
 output_excel_file = 'sum.xlsx'
 
 analyze_excel_blocks_to_excel_aligned(input_excel_file, input_sheet, output_excel_file)
