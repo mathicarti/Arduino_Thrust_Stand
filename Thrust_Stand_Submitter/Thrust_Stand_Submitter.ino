@@ -20,6 +20,7 @@ HX711_ADC LoadCell(HX711_dout, HX711_sck);
 void setup() {
   // "Arms" the ESC
   Serial.begin(9600);
+  delay(5000);
   ESC.attach(escPin,1000,2000);
   delay(1);
   ESC.write(10);

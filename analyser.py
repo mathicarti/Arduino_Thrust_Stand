@@ -61,7 +61,7 @@ def analyze_excel_blocks_to_excel_aligned(input_file_path, sheet_name, output_fi
 
 # Example usage:
 
-input_excel_file = 'test.xlsx'
+input_excel_file = f"{input("File: ")}.xlsx"
 radius = input("What was the radius of the prop: ")
 angle = input("What was the blade angle: ")
 trial = input("What was the trial number (1-5): ")
